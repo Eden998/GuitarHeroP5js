@@ -81,7 +81,6 @@ function preload() {
 }
 
 function setup() {
-  console.log("gg")
   let cnv = createCanvas(screen_size[0], screen_size[1]);
   textSize(70);
   textAlign(CENTER);
