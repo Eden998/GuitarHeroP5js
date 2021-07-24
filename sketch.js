@@ -1,3 +1,5 @@
+import "./FileReader"
+
 // *** general ***
 let screen_size = [800, 900];
 let framerate = 60;
