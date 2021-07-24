@@ -19,6 +19,9 @@ let settings_button_pos = [songs_list_button_pos[0], songs_list_button_pos[1] + 
 let settings_button_text_size = 70;
 let main_menu_buttons;
 
+// *** songs list ***
+let songs_list;
+
 // *** board ***
 
 // * notes *
@@ -73,6 +76,7 @@ let gameplay = false;
 
 
 function preload() {
+  songs_list = _getAllFilesFromFolder(__dirname + "assets");
   song_name = "Madcon - Beggin" 
   song_folder = "assets/" + song_name + "/"
   playing_sound = loadSound(song_folder + song_name + ".mp3");
@@ -100,6 +104,7 @@ function setup() {
 }
 
 function draw() {
+  text(songs_list, 100, 100);
   if (main_menu){
     draw_main_menu();
   }
