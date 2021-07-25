@@ -1,6 +1,7 @@
 class MenuButton{
-  constructor(x, y, text, text_size, font, button_dest){
+  constructor(x, y, text, text_size, font, button_dest, color = [255, 255, 255]){
     this.pos = [x, y];
+    this.color = color;
     this.button_dest = button_dest;
     this.text = text;
     this.text_size = text_size;
@@ -15,12 +16,12 @@ class MenuButton{
   }
   
   draw(){
-    this.is_hover();
-    stroke(255)
+    this.update_hover();
+    stroke(this.color)
     strokeWeight(3)
     textSize(this.text_size)
     if (this.mouse_hover){
-      fill(255)
+      fill(this.color)
     }
     else{
       fill(0)
@@ -30,8 +31,7 @@ class MenuButton{
     text(this.text, this.pos[0], this.pos[1]);
   }
   
-  is_hover(){
-    
+  update_hover(){
     if(this.text_rect_mid_x - this.text_width_from_mid <= mouseX && mouseX <= this.text_rect_mid_x + this.text_width_from_mid && this.text_rect_mid_y - this.text_height_from_mid <= mouseY && mouseY <= this.text_rect_mid_y + this.text_height_from_mid){
       this.mouse_hover = true;
     }

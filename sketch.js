@@ -19,8 +19,23 @@ let settings_button_pos = [songs_list_button_pos[0], songs_list_button_pos[1] + 
 let settings_button_text_size = 70;
 let main_menu_buttons;
 
-// *** songs list ***
+// *** songs list menu ***
 let songs_list;
+let songs_list_buttons = [];
+let songs_list_buttons_text_size = 50;
+let songs_list_buttons_height = 100;
+let buttons_distance = 100;
+
+// *** loading screen ***
+let song_loaded = false;
+let loading_circles = [];
+// *** song end menu
+let ending_messages = ["BIG OOF", "TRY HARDER!", "NICE!", "WELL PLAYED!", "NO WAY, 100%!!!"];
+let ending_message_height = 200;
+let percent_height = ending_message_height + 200;
+let song_end_menu_main_menu_button_height = percent_height + 200;
+let song_end_menu_main_menu_button_text_size = 100;
+let song_end_menu_main_menu_button;
 
 // *** board ***
 
@@ -33,7 +48,7 @@ let notes_height = screen_size[1] - 100;
 let notes_radius = 40;
 let notes = [];
 let buttons = []
-let notes_falling_velocity = 5;
+let notes_falling_velocity = 10;
 let remove_miss_distance = notes_falling_velocity * 6;
 
 // * stats *
@@ -52,7 +67,6 @@ let sound_threshold = 100
 
 // *** sound and notes timing ***
 let default_timer = 0.2;
-let curr_timer = 0;
 let notes_falling_distance = notes_height + (notes_radius / 2)
 let notes_falling_time = (notes_falling_distance / notes_falling_velocity) / framerate;
 let playing_sound_active = false;
@@ -67,53 +81,88 @@ let base_note_score = 50;
 let score = 0;
 let streak = 0;
 let multiplayer = 1;
+let note_hits = 0;
 
 // *** screen control ***
 let main_menu = true;
 let songs_list_menu = false;
+let loading = false;
+let song_end_menu = false;
 let settings = false;
 let gameplay = false;
 
 
 function preload() {
-  songs_list = _getAllFilesFromFolder(__dirname + "assets");
-  song_name = "Madcon - Beggin" 
-  song_folder = "assets/" + song_name + "/"
-  playing_sound = loadSound(song_folder + song_name + ".mp3");
-  table = loadTable(song_folder + song_name + '.csv', 'csv', 'header');
   board_font = loadFont("assets/board_font.ttf")
+  songs_list = loadStrings('assets/SongsList.txt');
 }
 
 function setup() {
+  
   let cnv = createCanvas(screen_size[0], screen_size[1]);
+  frameRate(framerate);
+  
   textSize(70);
   textAlign(CENTER);
   textFont(board_font)
   rectMode(CENTER)
-  cnv.mouseClicked(togglePlay);
+  
   fft = new p5.FFT(0.9, fft_bins);
-  playing_sound.amp(0.1);
-  frameRate(framerate);
+  
+  //main menu initialize
   songs_list_button = new MenuButton(songs_list_button_pos[0], songs_list_button_pos[1], "Songs List", songs_list_button_text_size, board_font, "songs list");
   settings_button = new MenuButton(settings_button_pos[0], settings_button_pos[1], "Settings", settings_button_text_size, board_font, "gameplay");
   main_menu_buttons = [songs_list_button, settings_button];
+  
+  //buttons initialize
   for (let i = 0; i < notes_num; i++) {
     let button = new Button(left_note_x + notes_distance * i, notes_height, colors[i], keys[i], notes_radius);
     buttons.push(button);
   }
+  
+  //songs list menu initialize
+  for (let i = 0 ; i < songs_list.length ; i++){
+    let song_button = new MenuButton(screen_size[0] / 2, songs_list_buttons_height + i * buttons_distance, songs_list[i], songs_list_buttons_text_size, board_font, "loading");
+    songs_list_buttons.push(song_button)
+  } 
+  // loading screen initialize
+  for (let i = 0 ; i < 5 ; i++){
+    let loading_circle = new LoadingCircle(200 + 100 * i, screen_size[1] / 2, colors[i], (5 - i) * 6);
+    loading_circles.push(loading_circle)
+  }
+  //song end menu initialize
+  song_end_menu_main_menu_button = new MenuButton(screen_size[0] / 2, song_end_menu_main_menu_button_height, "Main Menu", song_end_menu_main_menu_button_text_size, board_font, "main menu");
 }
 
 function draw() {
-  text(songs_list, 100, 100);
   if (main_menu){
     draw_main_menu();
   }
   else if(songs_list_menu){
     draw_songs_list_menu();
   }
+  else if(loading){
+    draw_loading();
+  }
   else if(gameplay){
     draw_gameplay();
   }
+  else if(song_end_menu){
+    draw_song_end_menu();
+  }
+}
+
+function reset_stats(){
+  notes = [];
+  notes_time = 0;
+  song_loaded = false;
+  playing_notes = false;
+  playing_sound_active = false;
+  curr_note = 0;
+  score = 0;
+  streak = 0;
+  multiplayer = 1;
+  note_hits = 0;
 }
 
 function mousePressed(){
@@ -123,6 +172,25 @@ function mousePressed(){
       if (check_curr_button != null){
         change_screens(check_curr_button);
       }
+    }
+  }
+  else if(songs_list_menu){
+    for(let i = 0 ; i < songs_list_buttons.length ; i++){
+      check_curr_button = songs_list_buttons[i].is_clicked();
+      if (check_curr_button != null){
+        load_song(songs_list[i]);
+        change_screens(check_curr_button);
+      }
+    }
+  }
+  else if(gameplay){
+    toggle_gameplay();
+  }
+  else if(song_end_menu){
+    check_curr_button = song_end_menu_main_menu_button.is_clicked();
+    if (check_curr_button != null){
+      change_screens(check_curr_button);
+      reset_stats();
     }
   }
 }
@@ -135,16 +203,40 @@ function draw_main_menu(){
 }
 
 function draw_songs_list_menu(){
+  background(0);
+  for(let i = 0 ; i < songs_list_buttons.length ; i++){
+    songs_list_buttons[i].draw();
+  }
+}
 
+function draw_loading(){
+  background(0);
+  for (let i = loading_circles.length - 1 ; i >= 0 ; i--){
+    loading_circles[i].update_size();
+    loading_circles[i].draw();
+  }
+}
+
+function draw_song_end_menu(){
+  background(0)
+  let percent = int((note_hits * 100) / table.getRowCount());
+  let ending_message_index = int((percent * (ending_messages.length - 1)) / 100)
+  textSize(song_end_menu_main_menu_button_text_size)
+  text(ending_messages[ending_message_index], screen_size[0] / 2, ending_message_height)
+  text(percent + "%", screen_size[0] / 2, percent_height)
+  song_end_menu_main_menu_button.draw();
 }
 
 function draw_gameplay(){
   background(0);
-  if (!playing_sound_active && notes_time >= notes_falling_time + offset)
+  if (!playing_sound_active && notes_time >= notes_falling_time + offset){
     activate_sound();
+  }
   sound_analize();
   draw_note_lines();
-  update_notes();
+  if (playing_notes){
+    update_notes();
+  }
   draw_notes();
   draw_buttons();
   draw_stats();
@@ -156,21 +248,34 @@ function keyPressed(){
     check_note(key_pressed);
   }
 }
+
 function change_screens(screen){
   main_menu = false;
   songs_list_menu = false;
+  song_end_menu = false;
+  loading = false;
   settings = false;
   gameplay = false;
   if (screen == "gameplay")
     gameplay = true;
   else if(screen == "songs list")
     songs_list_menu = true;
+  else if(screen == "loading")
+    loading = true;
   else if(screen == "settings")
     settings = true;
+  else if(screen == "main menu")
+    main_menu = true;
+  else if(screen == "end song menu")
+    song_end_menu = true;
   else
-    main_menu = true
-
+    main_menu = true;
 }
+
+function show_song_end_menu(){
+  change_screens("end song menu");
+}
+
 function draw_note_lines() {
   stroke(255);
   strokeWeight(1);
@@ -247,7 +352,7 @@ function draw_multiplayer(){
   text("X" + str(multiplayer), multiplayer_pos[0], multiplayer_pos[1]);
 }
 
-function togglePlay() {
+function toggle_gameplay() {
   if (playing_notes) {
     playing_notes = false;
   } 
@@ -257,7 +362,8 @@ function togglePlay() {
   }
   if (playing_sound.isPlaying()) {
     playing_sound.pause();
-  } else if(playing_sound_active) {
+  } 
+  else if(playing_sound_active) {
    playing_sound.play();
   }
 }
@@ -309,6 +415,7 @@ function check_note(key_pressed){
       curr_pos = notes[0].get_pos_y();
       if (abs(curr_pos - notes_height) <= 50){
         streak += 1;
+        note_hits += 1;
         score += base_note_score * multiplayer;
         buttons[key_index].note_hit(multiplayer);
       }
@@ -347,6 +454,18 @@ function remove_notes(){
 function reset_streak(){
   multiplayer = 1;
   streak = 0;
+}
+
+function load_song(song_name){
+  song_folder = "assets/" + song_name + "/"
+  playing_sound = loadSound(song_folder + song_name + ".mp3", loading_complete);
+  playing_sound.onended(show_song_end_menu);
+  table = loadTable(song_folder + song_name + '.csv', 'csv', 'header');
+}
+
+function loading_complete(){
+  song_loaded = true;
+  change_screens("gameplay")
 }
 
 function activate_sound(){
