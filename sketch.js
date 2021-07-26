@@ -8,7 +8,7 @@ let blue_c = [120, 191, 233];
 let green_c = [164, 228, 80];
 let purple_c = [204, 80, 230];
 let colors = [red_c, yellow_c, blue_c, green_c, purple_c];
-let keys = ['D', 'F', 'G', 'H', 'J'];
+let keys = ['1', '2', '3', '4', '5'];
 
 // *** main menu ***
 let songs_list_button;
@@ -48,7 +48,7 @@ let notes_height = screen_size[1] - 100;
 let notes_radius = 40;
 let notes = [];
 let buttons = []
-let notes_falling_velocity = 10;
+let notes_falling_velocity = 5;
 let remove_miss_distance = notes_falling_velocity * 6;
 
 // * stats *
@@ -97,9 +97,10 @@ function preload() {
   songs_list = loadStrings('assets/SongsList.txt');
 }
 
+let cnv;
+
 function setup() {
-  
-  let cnv = createCanvas(screen_size[0], screen_size[1]);
+  cnv = createCanvas(windowWidth, windowHeight);
   frameRate(framerate);
   
   textSize(70);
@@ -109,25 +110,33 @@ function setup() {
   
   fft = new p5.FFT(0.9, fft_bins);
   
+  update_components_pos();
+}
+
+function update_buttons(){
   //main menu initialize
   songs_list_button = new MenuButton(songs_list_button_pos[0], songs_list_button_pos[1], "Songs List", songs_list_button_text_size, board_font, "songs list");
   settings_button = new MenuButton(settings_button_pos[0], settings_button_pos[1], "Settings", settings_button_text_size, board_font, "gameplay");
   main_menu_buttons = [songs_list_button, settings_button];
   
   //buttons initialize
+  buttons = []
   for (let i = 0; i < notes_num; i++) {
     let button = new Button(left_note_x + notes_distance * i, notes_height, colors[i], keys[i], notes_radius);
     buttons.push(button);
   }
   
   //songs list menu initialize
+  songs_list_buttons = []
   for (let i = 0 ; i < songs_list.length ; i++){
-    let song_button = new MenuButton(screen_size[0] / 2, songs_list_buttons_height + i * buttons_distance, songs_list[i], songs_list_buttons_text_size, board_font, "loading");
+    let song_button = new MenuButton(screen_size[0] / 2, songs_list_buttons_height + i * buttons_distance, songs_list[i], songs_list_buttons_text_size, board_font, "loading", colors[i % 5]);
     songs_list_buttons.push(song_button)
   } 
+  
   // loading screen initialize
+  loading_circles = []
   for (let i = 0 ; i < 5 ; i++){
-    let loading_circle = new LoadingCircle(200 + 100 * i, screen_size[1] / 2, colors[i], (5 - i) * 6);
+    let loading_circle = new LoadingCircle(screen_size[0] / 2 - 200 + 100 * i, screen_size[1] / 2, colors[i], (5 - i) * 6);
     loading_circles.push(loading_circle)
   }
   //song end menu initialize
@@ -163,6 +172,55 @@ function reset_stats(){
   streak = 0;
   multiplayer = 1;
   note_hits = 0;
+}
+
+function windowResized(){
+  resizeCanvas(windowWidth, windowHeight)
+  update_components_pos();
+}
+
+function update_components_pos(){
+  screen_size = [windowWidth, 900];
+
+  // *** main menu ***
+  songs_list_button_pos = [windowWidth / 2, 400];
+  songs_list_button_text_size = 70;
+  settings_button_pos = [windowWidth / 2, songs_list_button_pos[1] + 100];
+  settings_button_text_size = 70;
+
+  // *** songs list menu ***
+  songs_list_buttons = [];
+  songs_list_buttons_text_size = 50;
+  songs_list_buttons_height = 100;
+  buttons_distance = 100;
+
+  // *** loading screen ***
+  song_loaded = false;
+  loading_circles = [];
+  // *** song end menu
+  ending_messages = ["BIG OOF", "TRY HARDER!", "NICE!", "WELL PLAYED!", "NO WAY, 100%!!!"];
+  ending_message_height = 200;
+  percent_height = ending_message_height + 200;
+  song_end_menu_main_menu_button_height = percent_height + 200;
+  song_end_menu_main_menu_button_text_size = 100;
+
+  // *** board ***
+
+  // * notes *
+  left_note_x = screen_size[0] / 2 - 300;
+  right_note_x = left_note_x + (notes_num - 1) * notes_distance;
+  notes_height = screen_size[1] - 100;
+
+  // * stats *
+  stats_x = screen_size[0] / 2 + 250;
+  score_pos = [stats_x, 100];
+  score_number = [stats_x, score_pos[1] + 50]
+  streak_pos = [stats_x, score_pos[1] + 200]
+  streak_number = [stats_x, streak_pos[1] + 50]
+  streak_rect = [stats_x, streak_number[1] + 100, 50, 150];
+  multiplayer_pos = [stats_x, streak_rect[1] + 120]
+  
+  update_buttons();
 }
 
 function mousePressed(){
