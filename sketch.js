@@ -8,7 +8,7 @@ let blue_c = [120, 191, 233];
 let green_c = [164, 228, 80];
 let purple_c = [204, 80, 230];
 let colors = [red_c, yellow_c, blue_c, green_c, purple_c];
-let keys = ['1', '2', '3', '4', '5'];
+let keys = ['D', 'F', 'G', 'H', 'J'];
 
 // *** main menu ***
 let songs_list_button;
