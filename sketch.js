@@ -29,6 +29,7 @@ let buttons_distance = 100;
 // *** loading screen ***
 let song_loaded = false;
 let loading_circles = [];
+
 // *** song end menu
 let ending_messages = ["BIG OOF", "TRY HARDER!", "NICE!", "WELL PLAYED!", "NO WAY, 100%!!!"];
 let ending_message_height = 200;
@@ -54,11 +55,23 @@ let remove_miss_distance = notes_falling_velocity * 6;
 // * stats *
 let stats_x = screen_size[0] - 150;
 let score_pos = [stats_x, 100];
-let score_number = [stats_x, score_pos[1] + 50]
-let streak_pos = [stats_x, score_pos[1] + 200]
-let streak_number = [stats_x, streak_pos[1] + 50]
+let score_number = [stats_x, score_pos[1] + 50];
+let streak_pos = [stats_x, score_pos[1] + 200];
+let streak_number = [stats_x, streak_pos[1] + 50];
 let streak_rect = [stats_x, streak_number[1] + 100, 50, 150];
-let multiplayer_pos = [stats_x, streak_rect[1] + 120]
+let multiplayer_pos = [stats_x, streak_rect[1] + 120];
+let pause_button;
+let pause_size = 60;
+let pause_pos = [screen_size[0] - 100, 100]
+
+// pause menu
+let return_to_menu_button;
+let return_to_menu_button_pos = [screen_size[0] / 2, 400];
+let return_to_menu_button_text_size = 70;
+let continue_button;
+let continue_button_pos = [songs_list_button_pos[0], songs_list_button_pos[1] + 100];
+let continue_button_text_size = 70;
+let pause_buttons;
 
 // *** FFT algorithm ***
 let fft_bins = 64;
@@ -90,7 +103,7 @@ let loading = false;
 let song_end_menu = false;
 let settings = false;
 let gameplay = false;
-
+let pause = false;
 
 function preload() {
   board_font = loadFont("assets/board_font.ttf")
@@ -116,15 +129,16 @@ function setup() {
 function update_buttons(){
   //main menu initialize
   songs_list_button = new MenuButton(songs_list_button_pos[0], songs_list_button_pos[1], "Songs List", songs_list_button_text_size, board_font, "songs list");
-  settings_button = new MenuButton(settings_button_pos[0], settings_button_pos[1], "Settings", settings_button_text_size, board_font, "gameplay");
+  settings_button = new MenuButton(settings_button_pos[0], settings_button_pos[1], "Settings", settings_button_text_size, board_font, "settings");
   main_menu_buttons = [songs_list_button, settings_button];
   
-  //buttons initialize
+  //gameplay initialize
   buttons = []
   for (let i = 0; i < notes_num; i++) {
     let button = new Button(left_note_x + notes_distance * i, notes_height, colors[i], keys[i], notes_radius);
     buttons.push(button);
   }
+  pause_button = new MenuButton(pause_pos[0], pause_pos[1] , "| |", pause_size, board_font, "pause");
   
   //songs list menu initialize
   songs_list_buttons = []
@@ -141,6 +155,11 @@ function update_buttons(){
   }
   //song end menu initialize
   song_end_menu_main_menu_button = new MenuButton(screen_size[0] / 2, song_end_menu_main_menu_button_height, "Main Menu", song_end_menu_main_menu_button_text_size, board_font, "main menu");
+  
+  //pause menu initialize
+  return_to_menu_button = new MenuButton(return_to_menu_button_pos[0], return_to_menu_button_pos[1], "Main Menu", return_to_menu_button_text_size, board_font, "main menu");
+  continue_button = new MenuButton(continue_button_pos[0], continue_button_pos[1], "Continue", continue_button_text_size, board_font, "gameplay");
+  pause_buttons = [return_to_menu_button, continue_button];
 }
 
 function draw() {
@@ -158,6 +177,9 @@ function draw() {
   }
   else if(song_end_menu){
     draw_song_end_menu();
+  }
+  else if(pause){
+    draw_pause();
   }
 }
 
@@ -197,6 +219,7 @@ function update_components_pos(){
   // *** loading screen ***
   song_loaded = false;
   loading_circles = [];
+  
   // *** song end menu
   ending_messages = ["BIG OOF", "TRY HARDER!", "NICE!", "WELL PLAYED!", "NO WAY, 100%!!!"];
   ending_message_height = 200;
@@ -219,6 +242,11 @@ function update_components_pos(){
   streak_number = [stats_x, streak_pos[1] + 50]
   streak_rect = [stats_x, streak_number[1] + 100, 50, 150];
   multiplayer_pos = [stats_x, streak_rect[1] + 120]
+  pause_pos = [screen_size[0] - 100, 100]
+  
+  // *** pause menu ***
+  return_to_menu_button_pos = [screen_size[0] / 2, 400];
+  continue_button_pos = [songs_list_button_pos[0], songs_list_button_pos[1] + 100];
   
   update_buttons();
 }
@@ -226,7 +254,7 @@ function update_components_pos(){
 function mousePressed(){
   if (main_menu){
     for(let i = 0 ; i < main_menu_buttons.length ; i++){
-      check_curr_button = main_menu_buttons[i].is_clicked();
+      let check_curr_button = main_menu_buttons[i].is_clicked();
       if (check_curr_button != null){
         change_screens(check_curr_button);
       }
@@ -234,7 +262,7 @@ function mousePressed(){
   }
   else if(songs_list_menu){
     for(let i = 0 ; i < songs_list_buttons.length ; i++){
-      check_curr_button = songs_list_buttons[i].is_clicked();
+      let check_curr_button = songs_list_buttons[i].is_clicked();
       if (check_curr_button != null){
         load_song(songs_list[i]);
         change_screens(check_curr_button);
@@ -242,13 +270,32 @@ function mousePressed(){
     }
   }
   else if(gameplay){
-    toggle_gameplay();
+    let check_curr_button = pause_button.is_clicked()
+    if (check_curr_button != null){
+      toggle_gameplay();
+      change_screens(check_curr_button);
+    }
   }
+  
   else if(song_end_menu){
-    check_curr_button = song_end_menu_main_menu_button.is_clicked();
+    let check_curr_button = song_end_menu_main_menu_button.is_clicked();
     if (check_curr_button != null){
       change_screens(check_curr_button);
       reset_stats();
+    }
+  }
+  else if(pause){
+    for(let i = 0 ; i < pause_buttons.length ; i++){
+      let check_curr_button = pause_buttons[i].is_clicked();
+      if (check_curr_button != null){
+        change_screens(check_curr_button);
+        if (check_curr_button == "main menu"){
+          reset_stats();
+        }
+        else{
+          toggle_gameplay();
+        }
+      }
     }
   }
 }
@@ -290,6 +337,9 @@ function draw_gameplay(){
   if (!playing_sound_active && notes_time >= notes_falling_time + offset){
     activate_sound();
   }
+  if (notes_time > playing_sound.duration()){
+    show_song_end_menu();
+  }
   sound_analize();
   draw_note_lines();
   if (playing_notes){
@@ -298,6 +348,14 @@ function draw_gameplay(){
   draw_notes();
   draw_buttons();
   draw_stats();
+  pause_button.draw();
+}
+
+function draw_pause(){
+  background(0);
+  for(let i = 0 ; i < pause_buttons.length ; i++){
+    pause_buttons[i].draw();
+  }
 }
 
 function keyPressed(){
@@ -320,12 +378,14 @@ function change_screens(screen){
     songs_list_menu = true;
   else if(screen == "loading")
     loading = true;
-  else if(screen == "settings")
-    settings = true;
+  //else if(screen == "settings")
+  //  settings = true;
   else if(screen == "main menu")
     main_menu = true;
   else if(screen == "end song menu")
     song_end_menu = true;
+  else if(screen == "pause")
+    pause = true;
   else
     main_menu = true;
 }
@@ -517,13 +577,13 @@ function reset_streak(){
 function load_song(song_name){
   song_folder = "assets/" + song_name + "/"
   playing_sound = loadSound(song_folder + song_name + ".mp3", loading_complete);
-  playing_sound.onended(show_song_end_menu);
   table = loadTable(song_folder + song_name + '.csv', 'csv', 'header');
 }
 
 function loading_complete(){
   song_loaded = true;
-  change_screens("gameplay")
+  change_screens("gameplay");
+  toggle_gameplay();
 }
 
 function activate_sound(){
