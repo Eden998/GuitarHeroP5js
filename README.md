@@ -4,7 +4,7 @@ Eden Yosef
 
 Language: Javascript
 
-Tools: P5
+Tools: P5, FFT
 
 Guitar Hero Replica I made with P5js library
 
