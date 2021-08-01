@@ -62,7 +62,7 @@ let streak_rect = [stats_x, streak_number[1] + 100, 50, 150];
 let multiplayer_pos = [stats_x, streak_rect[1] + 120];
 let pause_button;
 let pause_size = 60;
-let pause_pos = [screen_size[0] - 100, 100]
+let pause_pos = [stats_x + 100, 100]
 
 // pause menu
 let return_to_menu_button;
@@ -242,7 +242,7 @@ function update_components_pos(){
   streak_number = [stats_x, streak_pos[1] + 50]
   streak_rect = [stats_x, streak_number[1] + 100, 50, 150];
   multiplayer_pos = [stats_x, streak_rect[1] + 120]
-  pause_pos = [screen_size[0] - 100, 100]
+  pause_pos = [stats_x + 140, 80]
   
   // *** pause menu ***
   return_to_menu_button_pos = [screen_size[0] / 2, 400];
