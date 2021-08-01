@@ -14,6 +14,10 @@ You can try the game in the following link:
 
 https://eden998.github.io/GuitarHeroP5js/
 
+### Game Display:
+
+![Guitar Hero Gif](https://github.com/Eden998/GuitarHeroP5js/assets/guitar_hero_gif.gif)
+
 # How To Use
 
 1. Enter the link.
