@@ -31,7 +31,7 @@ let song_loaded = false;
 let loading_circles = [];
 
 // *** song end menu
-let ending_messages = ["BIG OOF", "TRY HARDER!", "NICE!", "WELL PLAYED!", "NO WAY, 100%!!!"];
+let ending_messages = ["TRY HARDER!", "NICE", "WELL PLAYED!", "AMAZING!", "NO WAY, 100%!!!"];
 let ending_message_height = 200;
 let percent_height = ending_message_height + 200;
 let song_end_menu_main_menu_button_height = percent_height + 200;
